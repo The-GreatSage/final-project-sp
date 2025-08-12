@@ -14,7 +14,7 @@ def test_api_valid_ticker(monkeypatch, client):
             def json(self):
                 return fake_data
         return MockResponse()
-    monkeypatch.setattr("requests.get", mock_get)
+    monkeypatch.setattr("app.cache.requests.get", mock_get)
     response = client.get("/api/price?ticker=AAPL")
     assert response.status_code == 200
     assert response.json == fake_data
@@ -26,7 +26,7 @@ def test_api_invalid_key(monkeypatch, client):
             def json(self):
                 return {"Error Message": "Invalid API key"}
         return MockResponse()
-    monkeypatch.setattr("requests.get", mock_get)
+    monkeypatch.setattr("app.cache.requests.get", mock_get)
     response = client.get("/api/price?ticker=AAPL")
     assert response.status_code == 400
     assert response.json == {"error": "Invalid ticker or API key"}
