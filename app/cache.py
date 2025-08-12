@@ -2,7 +2,6 @@ import requests
 from dotenv import load_dotenv
 import os
 import time
-from .cache import get_stock_data    
 
 # Load environment variables
 load_dotenv()
