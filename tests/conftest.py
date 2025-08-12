@@ -1,13 +1,13 @@
 import pytest
+from app.app import create_app
 
 @pytest.fixture
 def app():
-    """
-    Create and configure a new app instance for each test.
-    This fixture delays the import of the app to avoid startup errors.
-    """
-    # Moving the import inside the fixture function is the key to the fix.
-    from app.app import app
+    """Create and configure a new app instance for each test."""
+    app = create_app()
+    app.config.update({
+        "TESTING": True,
+    })
     yield app
 
 @pytest.fixture
