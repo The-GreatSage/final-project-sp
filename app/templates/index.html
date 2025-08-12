@@ -1,57 +1,133 @@
-<script>
-    document.getElementById("stockForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const ticker = document.getElementById("ticker").value;
-        const chartElement = document.getElementById("stockChart");
-        
-        // It's good practice to have a loading indicator, but for now, let's just clear the old chart
-        if (window.myStockChart) {
-            window.myStockChart.destroy();
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock Tracker</title>
+  <!-- Minimal built-in styles so you see something even if JS fails -->
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; }
+    header { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; }
+    input, button { padding:.6rem .8rem; font-size:1rem; }
+    #status { margin-top:.5rem; color:#555; }
+    .error { color:#b00020; white-space:pre-wrap; }
+    .card { margin-top:1rem; padding:1rem; border:1px solid #e5e7eb; border-radius:12px; }
+  </style>
+  <!-- Use CDN for Chart.js to avoid local path issues -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <h1>Stock Price Tracker</h1>
+
+  <header>
+    <label for="ticker"><strong>Ticker</strong></label>
+    <input id="ticker" placeholder="AAPL" value="AAPL" />
+    <button id="loadBtn">Load</button>
+    <span id="status" aria-live="polite">Ready.</span>
+  </header>
+
+  <div class="card">
+    <canvas id="chart" height="120"></canvas>
+  </div>
+
+  <div id="debug" class="card" hidden></div>
+
+  <script>
+    // Helper: Parse common API shapes to an array of {date, close}
+    function parseSeries(json) {
+      // 1) Alpha Vantage shape: { "Time Series (Daily)": { "YYYY-MM-DD": { "4. close": "123.45" }, ... } }
+      if (json && json["Time Series (Daily)"]) {
+        const obj = json["Time Series (Daily)"];
+        return Object.keys(obj)
+          .sort() // oldest->newest
+          .map(d => ({ date: d, close: Number(obj[d]["4. close"]) }))
+          .filter(pt => Number.isFinite(pt.close));
+      }
+      // 2) Simple shape: { price: 123.45 } (fallback to a single-point series)
+      if (json && typeof json.price !== "undefined") {
+        return [{ date: new Date().toISOString().slice(0,10), close: Number(json.price) }];
+      }
+      // 3) Unknown -> return empty
+      return [];
+    }
+
+    const statusEl = document.getElementById('status');
+    const debugEl = document.getElementById('debug');
+    const ctx = document.getElementById('chart').getContext('2d');
+    let chart;
+
+    function setStatus(msg, isError=false) {
+      statusEl.textContent = msg;
+      if (isError) {
+        debugEl.hidden = false;
+        debugEl.className = 'card error';
+        debugEl.textContent = msg;
+      }
+    }
+
+    async function fetchSeries(ticker) {
+      // NOTE: keep this path relative so it works on localhost & behind a proxy
+      const url = `./api/price?ticker=${encodeURIComponent(ticker)}`;
+      const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return resp.json();
+    }
+
+    function drawChart(points, label) {
+      const labels = points.map(p => p.date);
+      const data = points.map(p => p.close);
+
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: label || 'Close',
+            data,
+            tension: 0.2,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { ticks: { maxTicksLimit: 8 } },
+            y: { beginAtZero: false }
+          },
+          plugins: {
+            legend: { display: true }
+          }
         }
+      });
+    }
 
-        try {
-            const response = await fetch(`/api/price?ticker=${ticker}`);
-
-            // Check if the server responded with an error status (e.g., 400, 500)
-            if (!response.ok) {
-                // Try to get the error message from the response body
-                const errorData = await response.json().catch(() => ({ error: `HTTP error! Status: ${response.status}` }));
-                throw new Error(errorData.error);
-            }
-
-            const data = await response.json();
-
-            // Check for application-specific errors in a successful response body
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            // The API response structure can vary. Check if the required data is present.
-            const timeSeries = data["Time Series (Daily)"];
-            if (!timeSeries) {
-                throw new Error("Received an unexpected data format from the API.");
-            }
-
-            const times = Object.keys(timeSeries).reverse();
-            const prices = times.map(t => timeSeries[t]["4. close"]); 
-
-            // Create the new chart
-            window.myStockChart = new Chart(chartElement, {
-                type: "line",
-                data: {
-                    labels: times,
-                    datasets: [{ 
-                        label: ticker.toUpperCase(), 
-                        data: prices, 
-                        borderColor: "rgba(75, 192, 192, 1)",
-                        fill: false 
-                    }]
-                }
-            });
-
-        } catch (error) {
-            console.error('Error fetching or displaying stock data:', error);
-            alert(`An error occurred: ${error.message}`);
+    async function load(ticker) {
+      try {
+        setStatus(`Loading ${ticker}…`);
+        debugEl.hidden = true; debugEl.textContent = '';
+        const json = await fetchSeries(ticker);
+        const points = parseSeries(json);
+        if (!points.length) {
+          setStatus('API responded, but no price data found. See debug for payload shape.', true);
+          debugEl.textContent = JSON.stringify(json, null, 2);
+          return;
         }
+        drawChart(points, `${ticker} (close)`);
+        setStatus(`Loaded ${ticker}. Points: ${points.length}`);
+      } catch (err) {
+        setStatus(`Error loading ${ticker}: ${err.message || err}`, true);
+        console.error(err);
+      }
+    }
+
+    document.getElementById('loadBtn').addEventListener('click', () => {
+      const t = document.getElementById('ticker').value.trim().toUpperCase() || 'AAPL';
+      load(t);
     });
-</script>
+
+    // Auto-load initial symbol
+    document.addEventListener('DOMContentLoaded', () => load('AAPL'));
+  </script>
+</body>
+</html>
