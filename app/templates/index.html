@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Stock Tracker</h1>
+    <form id="stockForm">
+        <input type="text" id="ticker" placeholder="Enter ticker (e.g., AAPL)" required>
+        <button type="submit">Get Prices</button>
+    </form>
+    <canvas id="stockChart" width="400" height="200"></canvas>
+    <script>
+        document.getElementById("stockForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const ticker = document.getElementById("ticker").value;
+            const response = await fetch(`/api/price?ticker=${ticker}`);
+            const data = await response.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            const times = Object.keys(data["Time Series (Daily)"]).reverse();
+            const prices = times.map(t => data["Time Series (Daily)"][t]["4. close"]).reverse();
+            new Chart(document.getElementById("stockChart"), {
+                type: "line",
+                data: {
+                    labels: times,
+                    datasets: [{ label: ticker, data: prices, borderColor: "blue" }]
+                }
+            });
+        });
+    </script>
+</body>
+</html>

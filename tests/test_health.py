@@ -1,5 +1,5 @@
-# tests/test_health.py
 def test_health(client):
-    res = client.get("/health")
-    assert res.status_code == 200
-    assert res.get_json()["status"] == "ok"
+    """Test the health endpoint returns 'ok'."""
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json == {"status": "ok"}

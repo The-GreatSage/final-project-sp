@@ -1,46 +1,47 @@
-# final-project-sp
-
-
 # Stock Tracker Web App
 
-Minimal stock charting app. Fetches prices from **Alpha Vantage** and renders a **Chart.js** line chart. 
+A simple web app to view stock price charts using Alpha Vantage and Chart.js.
 
 ## Features
-- One endpoint: `GET /api/price?ticker=AAPL&interval=1day&range=1mo`
-- Single provider: **Alpha Vantage** (no fallback complexity)
-- Tiny in-memory TTL cache to reduce duplicate calls
-- Zero database, zero authentication
-- Tests with **pytest**; CI with GitHub Actions
+- Enter a stock ticker (e.g., AAPL) to see a price chart.
+- Uses a cache to avoid extra API calls.
+- No database or login needed.
+- Tests with pytest and automatic testing with GitHub Actions.
 
----
+## Setup
+1. **Clone the Project**:
+   ```bash
+   git clone https://github.com/The-GreatSage/final-project-sp
+   cd final-project-sp
 
-## Setup (Conda + Git Bash)
 
-```bash
-git clone <your-repo-url>
-cd stock-tracker
-
-# Create environment
-
+Create a Conda Environment:
 conda create --name stock-tracker python=3.11
 conda activate stock-tracker
 
-# Install Dependencies
 
+Install Packages:
 pip install -r requirements.txt
 
-# env files
 
-# .env — contains your real API key (not committed)
-ALPHAVANTAGE_API_KEY=your_real_key
+Set Up API Key:
+
+Copy .env.example to .env:cp .env.example .env
+
+Open .env in a text editor and add your Alpha Vantage API key:ALPHAVANTAGE_API_KEY=your_real_key_here
 CACHE_TTL_SECONDS=120
-# .env.example — placeholder template (committed)
-# Make sure .env is in .gitignore.
 
-## RUN
+Get a free API key from Alpha Vantage.
 
+Run the App:
 python -m app.app
 
-# Open http://localhost:8000 and enter a symbol like AAPL.
+Open http://localhost:8000 in your browser and enter a ticker (e.g., AAPL).
 
+Run Tests:
+pytest -vv -m "not integration"
 
+Tests check the API and health endpoint without real API calls.
+
+License
+This project uses the MIT License. See LICENSE for details.```
