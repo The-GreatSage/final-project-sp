@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, request, send_from_directory
 from dotenv import load_dotenv
-from services.alpha_vantage import fetch_daily_adjusted
+from .services.alpha_vantage import fetch_daily_adjusted
 from utils.cache import Cache
 
 # Load environment variables from .env file
