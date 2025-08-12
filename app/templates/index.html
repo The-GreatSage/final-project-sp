@@ -1,36 +1,57 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Stock Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <h1>Stock Tracker</h1>
-    <form id="stockForm">
-        <input type="text" id="ticker" placeholder="Enter ticker (e.g., AAPL)" required>
-        <button type="submit">Get Prices</button>
-    </form>
-    <canvas id="stockChart" width="400" height="200"></canvas>
-    <script>
-        document.getElementById("stockForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const ticker = document.getElementById("ticker").value;
+<script>
+    document.getElementById("stockForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const ticker = document.getElementById("ticker").value;
+        const chartElement = document.getElementById("stockChart");
+        
+        // It's good practice to have a loading indicator, but for now, let's just clear the old chart
+        if (window.myStockChart) {
+            window.myStockChart.destroy();
+        }
+
+        try {
             const response = await fetch(`/api/price?ticker=${ticker}`);
-            const data = await response.json();
-            if (data.error) {
-                alert(data.error);
-                return;
+
+            // Check if the server responded with an error status (e.g., 400, 500)
+            if (!response.ok) {
+                // Try to get the error message from the response body
+                const errorData = await response.json().catch(() => ({ error: `HTTP error! Status: ${response.status}` }));
+                throw new Error(errorData.error);
             }
-            const times = Object.keys(data["Time Series (Daily)"]).reverse();
-            const prices = times.map(t => data["Time Series (Daily)"][t]["4. close"]).reverse();
-            new Chart(document.getElementById("stockChart"), {
+
+            const data = await response.json();
+
+            // Check for application-specific errors in a successful response body
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // The API response structure can vary. Check if the required data is present.
+            const timeSeries = data["Time Series (Daily)"];
+            if (!timeSeries) {
+                throw new Error("Received an unexpected data format from the API.");
+            }
+
+            const times = Object.keys(timeSeries).reverse();
+            const prices = times.map(t => timeSeries[t]["4. close"]); 
+
+            // Create the new chart
+            window.myStockChart = new Chart(chartElement, {
                 type: "line",
                 data: {
                     labels: times,
-                    datasets: [{ label: ticker, data: prices, borderColor: "blue" }]
+                    datasets: [{ 
+                        label: ticker.toUpperCase(), 
+                        data: prices, 
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        fill: false 
+                    }]
                 }
             });
-        });
-    </script>
-</body>
-</html>
+
+        } catch (error) {
+            console.error('Error fetching or displaying stock data:', error);
+            alert(`An error occurred: ${error.message}`);
+        }
+    });
+</script>
