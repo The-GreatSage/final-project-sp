@@ -1,5 +1,5 @@
 # final-project-sp
-Stock Tracker web app for Programming in Python &amp; Foundational of Software Development
+
 
 # Stock Tracker Web App
 
@@ -16,10 +16,31 @@ Minimal stock charting app. Fetches prices from **Alpha Vantage** and renders a 
 
 ## Setup (Conda + Git Bash)
 
-
-
-### 0) Clone and enter the project
 ```bash
-# in Git Bash
-git clone <https://github.com/The-GreatSage/final-project-sp> stock-tracker
+git clone <your-repo-url>
 cd stock-tracker
+
+# Create environment
+
+conda create --name stock-tracker python=3.11
+conda activate stock-tracker
+
+# Install Dependencies
+
+pip install -r requirements.txt
+
+# env files
+
+# .env — contains your real API key (not committed)
+ALPHAVANTAGE_API_KEY=your_real_key
+CACHE_TTL_SECONDS=120
+# .env.example — placeholder template (committed)
+# Make sure .env is in .gitignore.
+
+## RUN
+
+python -m app.app
+
+# Open http://localhost:8000 and enter a symbol like AAPL.
+
+
