@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from dotenv import load_dotenv
 import os
-from .cache import get_stock_data
+from cache import get_stock_data  # Changed from .cache to cache
 
 # Load environment variables from .env file
 load_dotenv()
