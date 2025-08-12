@@ -1,13 +1,11 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
-import os
-from .cache import get_stock_data # The relative import is still correct
+from .cache import get_stock_data
+from .exceptions import ApiError
 
 def create_app():
     """Create and configure an instance of the Flask application."""
-    # Load environment variables from .env file
     load_dotenv()
-    
     app = Flask(__name__)
 
     @app.route("/")
@@ -20,20 +18,20 @@ def create_app():
         """Get stock prices for a ticker (e.g., AAPL)."""
         ticker = request.args.get("ticker")
         if not ticker:
-            return {"error": "Please provide a ticker"}, 400
-
-        # get_stock_data returns a tuple on error, and a dict on success
-        result = get_stock_data(ticker, interval="DAILY", range_="1mo")
-
-        # Check if the result is a tuple, which indicates an error
-        if isinstance(result, tuple):
-            # It's an error, so unpack the tuple and return the parts
-            error_body, status_code = result
-            return error_body, status_code
+            # Use jsonify for consistent JSON responses
+            return jsonify({"error": "Please provide a ticker"}), 400
+        
+        try:
+            data = get_stock_data(ticker, interval="DAILY", range_="1mo")
+            return jsonify(data)
+        except ApiError as e:
+            # Catch our custom error and return a 500 server error
+            app.logger.error(f"API Error: {e}") # Good practice to log errors
+            return jsonify({"error": "Failed to fetch data from external API"}), 500
 
     @app.route("/health")
     def health():
         """Check if the app is running."""
-        return {"status": "ok"}  # Simple health check
+        return jsonify({"status": "ok"})
 
     return app

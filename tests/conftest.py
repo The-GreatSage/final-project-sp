@@ -3,11 +3,11 @@ from app.app import create_app
 from app import cache
 
 @pytest.fixture(autouse=True)
-def clean_cache():  # <--- Add this new fixture
+def clean_cache():
     """A fixture to automatically clear the cache before each test."""
     cache.CACHE.clear()
 
-@pytest.fixture
+@pytest.fixture()
 def app():
     """Create and configure a new app instance for each test."""
     app = create_app()
@@ -16,7 +16,7 @@ def app():
     })
     yield app
 
-@pytest.fixture
+@pytest.fixture()
 def client(app):
     """A test client for the app."""
     return app.test_client()
