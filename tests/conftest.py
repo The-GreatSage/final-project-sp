@@ -1,5 +1,11 @@
 import pytest
 from app.app import create_app
+from app import cache
+
+@pytest.fixture(autouse=True)
+def clean_cache():  # <--- Add this new fixture
+    """A fixture to automatically clear the cache before each test."""
+    cache.CACHE.clear()
 
 @pytest.fixture
 def app():
