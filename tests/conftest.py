@@ -1,25 +1,23 @@
-# tests/conftest.py
-import os
-import sys
+# These lines let Python find and load files
 import importlib.util
-import pytest
+import sys
+import os
 
-# Ensure a dummy key so code paths that check for it won't crash
-os.environ.setdefault("ALPHA_VANTAGE_API_KEY", "test_dummy_key")
+# Find the path to app.py, which is inside the 'app' folder
+# We start from where this conftest.py file is (in 'tests' folder)
+# Then go up one level ("..") and into "app/app.py"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+app_path = os.path.join(base_dir, "..", "app", "app.py")
 
-# Load app.py from repo root without relying on packages/PYTHONPATH
-ROOT = os.path.dirname(os.path.dirname(__file__))
-APP_PATH = os.path.join(ROOT, "app.py")
-
-spec = importlib.util.spec_from_file_location("app_module", APP_PATH)
+# Load app.py as a module (like including it in our code)
+spec = importlib.util.spec_from_file_location("app_module", app_path)
 app_module = importlib.util.module_from_spec(spec)
+sys.modules["app_module"] = app_module
 spec.loader.exec_module(app_module)
 
+# This is a helper for tests (a "fixture" in pytest)
+# It gives tests access to the app in app.py
+import pytest
 @pytest.fixture
-def flask_app():
-    # Testing=True ensures the endpoint returns deterministic fake data
-    return app_module.create_app(testing=True)
-
-@pytest.fixture
-def client(flask_app):
-    return flask_app.test_client()
+def app():
+    return app_module.app  # Assumes 'app' is the main thing in app.py (like a Flask app)
