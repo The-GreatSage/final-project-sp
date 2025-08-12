@@ -1,35 +1,35 @@
+# app/services/alpha_vantage.py
+import os
 import requests
+from typing import Dict, Any, List
 
-# Base URL for Alpha Vantage API
-BASE_URL = "https://www.alphavantage.co/query"
+ALPHA_ENDPOINT = "https://www.alphavantage.co/query"
 
-def fetch_daily_adjusted(symbol, api_key):
-    """
-    Get daily adjusted stock prices from Alpha Vantage.
-    Returns a list of dictionaries with date and close price.
-    """
+def _get_api_key() -> str:
+    key = os.getenv("ALPHA_VANTAGE_API_KEY") or os.getenv("ALPHAVANTAGE_API_KEY")
+    if not key:
+        raise RuntimeError("Missing ALPHA_VANTAGE_API_KEY")
+    return key
+
+def fetch_daily_adjusted(symbol: str) -> Dict[str, Any]:
+    """Return compact daily adjusted data as {meta, series:[{timestamp, close}...]}."""
     params = {
         "function": "TIME_SERIES_DAILY_ADJUSTED",
         "symbol": symbol,
         "outputsize": "compact",
-        "apikey": api_key
+        "apikey": _get_api_key(),
     }
+    r = requests.get(ALPHA_ENDPOINT, params=params, timeout=15)
+    r.raise_for_status()
+    payload = r.json()
+    series_key = "Time Series (Daily)"
+    if series_key not in payload:
+        # Normalize Alpha Vantage error messages
+        return {"meta": {"symbol": symbol}, "series": []}
 
-    response = requests.get(BASE_URL, params=params, timeout=10)
-    data = response.json()
-
-    if "Error Message" in data:
-        raise Exception("Invalid symbol or request error.")
-    if "Time Series (Daily)" not in data:
-        raise Exception("Unexpected API response.")
-
-    time_series = data["Time Series (Daily)"]
-
-    # Convert to list of {date, close}
-    prices = []
-    for date, values in time_series.items():
-        prices.append({"date": date, "close": float(values["4. close"])})
-
-    # Sort by date (oldest first)
-    prices.sort(key=lambda x: x["date"])
-    return prices
+    rows: List[Dict[str, Any]] = []
+    ts = payload[series_key]
+    # newest first
+    for date, row in sorted(ts.items(), key=lambda x: x[0]):
+        rows.append({"timestamp": f"{date} 00:00:00", "close": float(row["4. close"])})
+    return {"meta": {"symbol": symbol}, "series": rows}

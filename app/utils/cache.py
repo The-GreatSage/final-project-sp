@@ -1,19 +1,24 @@
+# app/utils/cache.py
 import time
+from typing import Any, Dict, Optional
 
 class Cache:
-    def __init__(self, default_ttl=120):
+    def __init__(self, default_ttl: int = 120):
         self.default_ttl = default_ttl
-        self.data = {}  # store as {key: (expiry_time, value)}
+        self._store: Dict[str, Any] = {}
+        self._exp: Dict[str, float] = {}
 
-    def get(self, key):
-        if key in self.data:
-            expiry, value = self.data[key]
-            if time.time() < expiry:
-                return value
-            else:
-                del self.data[key]
-        return None
+    def get(self, key: str) -> Optional[Any]:
+        exp = self._exp.get(key)
+        if exp is None:
+            return None
+        if time.time() > exp:
+            self._store.pop(key, None)
+            self._exp.pop(key, None)
+            return None
+        return self._store.get(key)
 
-    def set(self, key, value):
-        expiry_time = time.time() + self.default_ttl
-        self.data[key] = (expiry_time, value)
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        ttl = self.default_ttl if ttl is None else ttl
+        self._store[key] = value
+        self._exp[key] = time.time() + ttl
