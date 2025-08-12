@@ -1,24 +1,26 @@
-import importlib.util
-import sys
 import os
+import importlib
 import pytest
 
-# Find app.py in the 'app' folder
-base_dir = os.path.dirname(os.path.abspath(__file__))  # Path to 'tests' folder
-app_path = os.path.join(base_dir, "..", "app", "app.py")  # Path to app/app.py
+# Safe dummy key for tests; your tests monkeypatch requests.get anyway
+os.environ.setdefault("ALPHA_VANTAGE_API_KEY", "test_dummy_key")
 
-# Load app.py
-spec = importlib.util.spec_from_file_location("app_module", app_path)
-app_module = importlib.util.module_from_spec(spec)
-sys.modules["app_module"] = app_module
-spec.loader.exec_module(app_module)
+# Import the installed package 'app' (repo root added via pytest.ini)
+pkg = importlib.import_module("app")
+
+# Prefer a factory if available
+if hasattr(pkg, "create_app"):
+    create_app = pkg.create_app
+else:
+    # fallback to app.app:app if you expose a module-level Flask app there
+    from app.app import app as _global_app  # type: ignore
 
 @pytest.fixture
 def app():
-    """Give tests access to the Flask app."""
-    return app_module.app
+    if 'create_app' in globals():
+        return create_app(testing=True)
+    return _global_app  # pragma: no cover
 
 @pytest.fixture
 def client(app):
-    """Give tests a way to send fake HTTP requests."""
     return app.test_client()
