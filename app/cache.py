@@ -22,7 +22,7 @@ def get_stock_data(ticker, interval, range_):
             return {"error": "Invalid ticker or API key"}, 400
         
         CACHE[cache_key] = {"data": data, "time": time.time()}
-        
+    
         return data
         
     except Exception:
