@@ -110,7 +110,7 @@
         const points = parseSeries(json);
         if (!points.length) {
           setStatus('API responded, but no price data found. See debug for payload shape.', true);
-          debugEl.textContent = JSON.stringify(json, null, 2);
+          // debugEl.textContent = JSON.stringify(json, null, 2);
           return;
         }
         drawChart(points, `${ticker} (close)`);

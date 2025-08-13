@@ -12,6 +12,10 @@ API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 CACHE = {}
 CACHE_TTL = int(os.getenv("CACHE_TTL_SECONDS", 120))
 
+def create_app():
+    # ...existing code to create and return your Flask app...
+    return app
+
 def _format_yfinance_data(data: pd.DataFrame) -> dict:
     """Formats yfinance DataFrame to match Alpha Vantage's structure."""
     time_series = {}
