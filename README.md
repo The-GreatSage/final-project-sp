@@ -16,8 +16,8 @@ A simple web app to view stock price charts using Alpha Vantage and Chart.js.
 
 
 Create a Conda Environment:
-conda create --name stock-tracker python=3.11
-conda activate stock-tracker
+conda create -n env-name python=3.11
+conda activate env-name
 
 
 Install Packages:
@@ -25,8 +25,6 @@ pip install -r requirements.txt
 
 
 Set Up API Key:
-
-Copy .env.example to .env:cp .env.example .env
 
 Open .env in a text editor and add your Alpha Vantage API key:ALPHAVANTAGE_API_KEY=your_real_key_here
 CACHE_TTL_SECONDS=120
