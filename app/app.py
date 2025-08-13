@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import time
 from .exceptions import ApiError
+from flask import Flask
 
 # Load environment variables
 load_dotenv()
@@ -13,7 +14,8 @@ CACHE = {}
 CACHE_TTL = int(os.getenv("CACHE_TTL_SECONDS", 120))
 
 def create_app():
-    # ...existing code to create and return your Flask app...
+    app = Flask(__name__)
+    # ...your setup code...
     return app
 
 def _format_yfinance_data(data: pd.DataFrame) -> dict:
