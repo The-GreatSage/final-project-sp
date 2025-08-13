@@ -61,13 +61,10 @@ def get_stock_data(ticker, interval, range_):
         return CACHE[cache_key]["data"]
     
     try:
-        # First, try the primary data source
         data = _fetch_from_alphavantage(ticker, interval)
     except ApiError as e:
-        # If the primary source fails, try the fallback
         print(f"Alpha Vantage failed: {e}. Trying yfinance fallback...")
         data = _fetch_from_yfinance(ticker, range_)
     
-    # Cache the result, regardless of the source
     CACHE[cache_key] = {"data": data, "time": time.time()}
     return data

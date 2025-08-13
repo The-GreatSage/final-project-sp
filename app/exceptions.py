@@ -3,5 +3,5 @@ class ApplicationError(Exception):
     pass
 
 class ApiError(ApplicationError):
-    """Custom exception for errors from the external Alpha Vantage API."""
+    """Custom exception for errors from the data-fetching layer."""
     pass

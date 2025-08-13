@@ -2,7 +2,6 @@ import pytest
 from app.exceptions import ApiError
 
 # Sample data that mimics the Alpha Vantage structure
-# This is what our yfinance formatter should produce as well.
 FAKE_SUCCESS_DATA = {"Time Series (Daily)": {"2025-08-01": {"4. close": "150.00"}}}
 
 def test_api_no_ticker(client):
@@ -13,7 +12,6 @@ def test_api_no_ticker(client):
 
 def test_api_success_from_alphavantage(monkeypatch, client):
     """Test a successful API call using the primary data source (Alpha Vantage)."""
-    # Mock the Alpha Vantage fetcher to return success
     monkeypatch.setattr("app.cache._fetch_from_alphavantage", lambda *args, **kwargs: FAKE_SUCCESS_DATA)
     
     response = client.get("/api/price?ticker=AAPL")
@@ -22,12 +20,10 @@ def test_api_success_from_alphavantage(monkeypatch, client):
 
 def test_api_fallback_to_yfinance(monkeypatch, client):
     """Test that the API gracefully falls back to yfinance when Alpha Vantage fails."""
-    # 1. Mock the Alpha Vantage fetcher to fail
     def mock_raise_av_error(*args, **kwargs):
         raise ApiError("Alpha Vantage is down")
     monkeypatch.setattr("app.cache._fetch_from_alphavantage", mock_raise_av_error)
     
-    # 2. Mock the yfinance fetcher to succeed
     monkeypatch.setattr("app.cache._fetch_from_yfinance", lambda *args, **kwargs: FAKE_SUCCESS_DATA)
 
     response = client.get("/api/price?ticker=GOOG")
@@ -36,12 +32,10 @@ def test_api_fallback_to_yfinance(monkeypatch, client):
 
 def test_api_all_sources_fail(monkeypatch, client):
     """Test that the API returns a 500 error when all data sources fail."""
-    # 1. Mock the Alpha Vantage fetcher to fail
     def mock_raise_av_error(*args, **kwargs):
         raise ApiError("Alpha Vantage is down")
     monkeypatch.setattr("app.cache._fetch_from_alphavantage", mock_raise_av_error)
 
-    # 2. Mock the yfinance fetcher to also fail
     def mock_raise_yf_error(*args, **kwargs):
         raise ApiError("yfinance is down")
     monkeypatch.setattr("app.cache._fetch_from_yfinance", mock_raise_yf_error)
